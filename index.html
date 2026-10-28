@@ -31,26 +31,29 @@
     // Initialize Leaflet map centered on Perth, WA
     var map = L.map('map').setView([-31.9505, 115.8605], 10);
 
-    // Add OpenStreetMap basemap tiles
-L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16, attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ' }).addTo(map);
-    
+    // Add free OpenStreetMap basemap tiles (No API key required)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
 
-    // Fetch and load your uploaded GeoJSON file
+    // Fetch and load your GeoJSON file
     fetch('Perth_Housing_Affordability_SAL2021.geojson')
       .then(response => response.json())
       .then(data => {
         var geojsonLayer = L.geoJson(data, {
           style: function(feature) {
+            // Pulls the color property directly from your GeoJSON properties
+            var fillColor = (feature.properties && feature.properties.color) ? feature.properties.color : '#3388ff';
             return {
-              color: "#3388ff",
-              weight: 2,
+              color: "#555555",       // Border color for suburb outlines
+              weight: 1,
               opacity: 0.8,
-              fillColor: "#3388ff",
-              fillOpacity: 0.35
+              fillColor: fillColor,   // Uses your dataset's original colors
+              fillOpacity: 0.75
             };
           },
           onEachFeature: function (feature, layer) {
-            // Generates popups containing all attribute information
             if (feature.properties) {
               var popupText = "";
               for (var key in feature.properties) {
@@ -61,10 +64,13 @@ L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_L
           }
         }).addTo(map);
 
-        // Auto-fit map boundaries around the Perth GeoJSON region
+        // Auto-fit map boundaries around the Perth region
         map.fitBounds(geojsonLayer.getBounds());
       })
       .catch(error => console.error('Error loading GeoJSON:', error));
   </script>
+
+</body>
+</html>
 
 </body>
