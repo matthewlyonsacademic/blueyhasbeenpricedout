@@ -28,43 +28,63 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    // Initialize Leaflet map centered on Perth, WA
     var map = L.map('map').setView([-31.9505, 115.8605], 10);
 
-    // Add free OpenStreetMap basemap tiles (No API key required)
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    // Free Esri Light Gray Basemap
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 16,
+      attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
     }).addTo(map);
 
-    // Fetch and load your GeoJSON file
+    function getSuburbColor(properties) {
+      if (!properties) return '#f0f2f5';
+      
+      if (properties.color && properties.color !== '') {
+        return properties.color;
+      }
+      
+      var status = properties.status || properties.Affordability_status || '';
+      switch (status) {
+        case 'Affordable':
+          return '#2b5c8f';
+        case 'Unaffordable':
+          return '#4a90e2';
+        case 'Priced out':
+          return '#90caf9';
+        case 'Insufficient data / Unassessed':
+        default:
+          return '#f0f2f5';
+      }
+    }
+
+    // Load GeoJSON
     fetch('Perth_Housing_Affordability_SAL2021.geojson')
       .then(response => response.json())
       .then(data => {
         var geojsonLayer = L.geoJson(data, {
           style: function(feature) {
-            // Pulls the color property directly from your GeoJSON properties
-            var fillColor = (feature.properties && feature.properties.color) ? feature.properties.color : '#3388ff';
             return {
-              color: "#555555",       // Border color for suburb outlines
-              weight: 1,
+              color: "#666666",
+              weight: 0.8,
               opacity: 0.8,
-              fillColor: fillColor,   // Uses your dataset's original colors
-              fillOpacity: 0.75
+              fillColor: getSuburbColor(feature.properties),
+              fillOpacity: 0.85
             };
           },
           onEachFeature: function (feature, layer) {
             if (feature.properties) {
-              var popupText = "";
-              for (var key in feature.properties) {
-                popupText += "<b>" + key + ":</b> " + feature.properties[key] + "<br>";
-              }
+              var subName = feature.properties.suburb || feature.properties.SUBURB || 'Unknown';
+              var statusText = feature.properties.status || feature.properties.Status || 'N/A';
+              
+              // Only display suburb name and status
+              var popupText = "<b>suburb:</b> " + subName + "<br>" +
+                              "<b>status:</b> " + statusText;
+                              
               layer.bindPopup(popupText);
             }
           }
         }).addTo(map);
 
-        // Auto-fit map boundaries around the Perth region
         map.fitBounds(geojsonLayer.getBounds());
       })
       .catch(error => console.error('Error loading GeoJSON:', error));
@@ -72,5 +92,3 @@
 
 </body>
 </html>
-
-</body>
